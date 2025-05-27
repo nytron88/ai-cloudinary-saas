@@ -24,12 +24,15 @@ export default clerkMiddleware(async (auth, req) => {
     return NextResponse.redirect(new URL("/home", req.url));
   }
 
-  console.log(pathname);
-  console.log(isPublicPage);
-
   if (!userId) {
-    if (!isPublicPage || (isApi && !isPublicApi)) {
-      return NextResponse.redirect(new URL("/sign-in", req.url));
+    if (isApi) {
+      if (!isPublicApi) {
+        return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+      }
+    } else {
+      if (!isPublicPage) {
+        return NextResponse.redirect(new URL("/sign-in", req.url));
+      }
     }
   }
 
