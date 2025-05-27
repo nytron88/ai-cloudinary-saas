@@ -1,3 +1,6 @@
-// TODO: WORK ON THIS
-
-export interface ApiResponse {}
+export interface APIResponse {
+  success: boolean;
+  message: string;
+  data?: any;
+  errors?: object;
+}

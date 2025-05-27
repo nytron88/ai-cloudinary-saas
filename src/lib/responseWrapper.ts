@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 
-export function successResponse(
-  data: any = null,
+export function successResponse<T = any>(
+  data?: T,
   message = "Request successful",
   status = 200
 ) {
