@@ -7,6 +7,8 @@ import { UploadApiResponse } from "cloudinary";
 import { prisma } from "@/lib/prisma";
 import { VideoUploadResponse } from "@/types/video";
 
+const MAX_FILE_SIZE = 100 * 1024 * 1024; // 100MB
+
 export const POST = withLoggerAndErrorHandler(async (request: NextRequest) => {
   const { userId } = await auth();
 
@@ -28,6 +30,11 @@ export const POST = withLoggerAndErrorHandler(async (request: NextRequest) => {
     return errorResponse("Missing required fields", 400);
   }
 
+  // Restrict file size to 100MB
+  if (file.size > MAX_FILE_SIZE) {
+    return errorResponse("File size must be less than 100MB", 400);
+  }
+
   const bytes = await file.arrayBuffer();
   const buffer = Buffer.from(bytes);
 
@@ -37,7 +44,8 @@ export const POST = withLoggerAndErrorHandler(async (request: NextRequest) => {
         {
           folder: "cloudinary-saas-video-uploads",
           resource_type: "video",
-          transformation: [{ quality: "auto", fetch_format: "mp4" }],
+          eager: [{ quality: "auto", fetch_format: "mp4" }],
+          eager_async: true,
         },
         (error, result) => {
           if (error) reject(error);

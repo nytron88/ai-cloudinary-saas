@@ -8,6 +8,7 @@ import { Video } from "@prisma/client"
 import { Card, CardContent, CardFooter } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
+import { toast } from "sonner"
 
 dayjs.extend(relativeTime)
 
@@ -16,24 +17,50 @@ interface VideoCardProps {
     onDownload: (url: string, title: string) => void;
 }
 
+// Helper to format seconds to mm:ss
+function formatDuration(seconds: number) {
+    const mins = Math.floor(seconds / 60);
+    const secs = Math.floor(seconds % 60);
+    return `${mins}:${secs.toString().padStart(2, '0')}`;
+}
+
 const VideoCard: React.FC<VideoCardProps> = ({ video, onDownload }) => {
     const [isLoading, setIsLoading] = useState(false);
-    const [videoUrl, setVideoUrl] = useState<string>("");
+    const [previewUrl, setPreviewUrl] = useState<string>("");
     const [thumbnailUrl, setThumbnailUrl] = useState<string>("");
     const [isHovered, setIsHovered] = useState(false);
+    const [previewReady, setPreviewReady] = useState(false);
 
     useEffect(() => {
-        console.log(video.publicId);
+        let isMounted = true;
         if (video.publicId) {
-            // Get video URL with optimized settings
-            const videoUrl = getCldVideoUrl({
+            // Preview video with transformation
+            const previewUrl = getCldVideoUrl({
                 src: video.publicId,
+                width: 400,
+                height: 225,
+                rawTransformations: [
+                    "e_preview:duration_15:max_seg_9:min_seg_dur_1"
+                ],
                 format: "auto",
                 quality: "auto",
             });
-            setVideoUrl(videoUrl);
+            setPreviewUrl(previewUrl);
 
-            // Get thumbnail URL with smart cropping
+            // Check if preview is ready
+            fetch(previewUrl, { method: "HEAD" })
+                .then(res => {
+                    if (isMounted) setPreviewReady(res.ok);
+                    if (isMounted && !res.ok) {
+                        toast.info("Preview is still processing. Showing thumbnail for now.");
+                    }
+                })
+                .catch(() => {
+                    if (isMounted) setPreviewReady(false);
+                    toast.info("Preview is still processing. Showing thumbnail for now.");
+                });
+
+            // Thumbnail
             const thumbnailUrl = getCldImageUrl({
                 src: video.publicId,
                 format: "jpg",
@@ -44,21 +71,20 @@ const VideoCard: React.FC<VideoCardProps> = ({ video, onDownload }) => {
                 gravity: "auto",
                 assetType: "video",
             });
-
-            console.log(thumbnailUrl);
             setThumbnailUrl(thumbnailUrl);
         }
+        return () => { isMounted = false; }
     }, [video.publicId]);
 
     const handleDownload = useCallback(async () => {
-        if (!videoUrl) return;
+        if (!previewUrl) return;
         setIsLoading(true);
         try {
-            await onDownload(videoUrl, video.title);
+            await onDownload(previewUrl, video.title);
         } finally {
             setIsLoading(false);
         }
-    }, [videoUrl, video.title, onDownload]);
+    }, [previewUrl, video.title, onDownload]);
 
     return (
         <Card
@@ -71,9 +97,9 @@ const VideoCard: React.FC<VideoCardProps> = ({ video, onDownload }) => {
             onMouseLeave={() => setIsHovered(false)}
         >
             <div className="w-full aspect-video">
-                {isHovered && videoUrl ? (
+                {isHovered && previewReady && previewUrl ? (
                     <video
-                        src={videoUrl}
+                        src={previewUrl}
                         className="w-full h-full object-cover bg-gray-900"
                         autoPlay
                         muted
@@ -97,6 +123,12 @@ const VideoCard: React.FC<VideoCardProps> = ({ video, onDownload }) => {
                 <div className="flex items-center gap-2 text-sm text-gray-400">
                     <Clock className="w-4 h-4" />
                     <span>{dayjs(video.createdAt).fromNow()}</span>
+                    {video.duration && (
+                        <>
+                            <span>•</span>
+                            <span>{formatDuration(video.duration)}</span>
+                        </>
+                    )}
                 </div>
                 <div className="flex items-center gap-4 text-sm text-gray-400">
                     <div className="flex items-center gap-1">
