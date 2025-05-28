@@ -28,7 +28,7 @@ export default function GlobalNotFound() {
                             variant="default"
                             className="bg-white text-black hover:bg-gray-100 transition-colors"
                         >
-                            <Link href="/">
+                            <Link href="/home">
                                 Go to Home Page
                             </Link>
                         </Button>
