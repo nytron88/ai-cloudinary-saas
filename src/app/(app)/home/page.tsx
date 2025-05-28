@@ -1,76 +1,31 @@
-"use client"
-
-import React, { useEffect, useState } from 'react'
+import React from 'react'
 import { Video } from '@prisma/client'
-import VideoCard from '@/components/home/VideoCard'
+import VideoCardWrapper from '@/components/home/VideoCardWrapper'
 import { Button } from '@/components/ui/button'
 import { Plus, Upload } from 'lucide-react'
 import Link from 'next/link'
-import { Skeleton } from '@/components/ui/skeleton'
+import axios from 'axios'
 
-const HomePage = () => {
-    const [videos, setVideos] = useState<Video[]>([]);
-    const [isLoading, setIsLoading] = useState(true);
-
-    useEffect(() => {
-        const fetchVideos = async () => {
-            try {
-                const response = await fetch('/api/videos');
-                const data = await response.json();
-                if (data.success) {
-                    setVideos(data.data);
-                }
-            } catch (error) {
-                console.error('Error fetching videos:', error);
-            } finally {
-                setIsLoading(false);
+async function getVideos() {
+    try {
+        const response = await axios.get(`${process.env.NEXT_PUBLIC_APP_URL}/api/videos`, {
+            headers: {
+                'Cache-Control': 'no-cache'
             }
-        };
-
-        fetchVideos();
-    }, []);
-
-    const handleDownload = async (url: string, title: string) => {
-        try {
-            const response = await fetch(url);
-            const blob = await response.blob();
-            const downloadUrl = window.URL.createObjectURL(blob);
-            const link = document.createElement('a');
-            link.href = downloadUrl;
-            link.download = `${title}.mp4`;
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
-            window.URL.revokeObjectURL(downloadUrl);
-        } catch (error) {
-            console.error('Error downloading video:', error);
-        }
-    };
-
-    if (isLoading) {
-        return (
-            <div className="container mx-auto p-6 space-y-8">
-                <div className="flex justify-between items-center">
-                    <Skeleton className="h-10 w-48" />
-                    <Skeleton className="h-10 w-40" />
-                </div>
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                    {[...Array(6)].map((_, i) => (
-                        <div key={i} className="space-y-4">
-                            <Skeleton className="aspect-video w-full" />
-                            <Skeleton className="h-6 w-3/4" />
-                            <Skeleton className="h-4 w-1/2" />
-                            <Skeleton className="h-10 w-full" />
-                        </div>
-                    ))}
-                </div>
-            </div>
-        );
+        });
+        return response.data.data;
+    } catch (error) {
+        console.error('Error fetching videos:', error);
+        return [];
     }
+}
+
+export default async function HomePage() {
+    const videos = await getVideos();
 
     return (
         <div className="min-h-screen bg-gradient-to-b from-black to-gray-900">
-            <div className="container mx-auto py-12 px-4">
+            <div className="container mx-auto px-4">
                 <div className="max-w-6xl mx-auto space-y-8">
                     {videos.length === 0 ? (
                         <div className="flex flex-col items-center justify-center py-16 px-4 text-center space-y-4 border-2 border-dashed border-gray-700 rounded-lg bg-gray-900/30">
@@ -92,11 +47,10 @@ const HomePage = () => {
                         </div>
                     ) : (
                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                            {videos.map((video) => (
-                                <VideoCard
+                            {videos.map((video: Video) => (
+                                <VideoCardWrapper
                                     key={video.id}
                                     video={video}
-                                    onDownload={handleDownload}
                                 />
                             ))}
                         </div>
@@ -105,6 +59,4 @@ const HomePage = () => {
             </div>
         </div>
     );
-};
-
-export default HomePage;
+}
