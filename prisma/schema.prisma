@@ -16,11 +16,11 @@ datasource db {
 model Video {
   id             String   @id @default(uuid())
   title          String
-  description    String?
+  description    String
   publicId       String
   originalSize   String
   compressedSize String
-  duration       String
+  duration       Float
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
 }

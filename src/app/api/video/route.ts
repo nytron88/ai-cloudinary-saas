@@ -1,16 +1,68 @@
 import { NextRequest } from "next/server";
+import cloudinary from "@/lib/cloudinary";
+import { auth } from "@clerk/nextjs/server";
 import { withLoggerAndErrorHandler } from "@/lib/withLoggerAndErrorHandler";
-import { successResponse } from "@/lib/responseWrapper";
+import { errorResponse, successResponse } from "@/lib/responseWrapper";
+import { UploadApiResponse } from "cloudinary";
 import { prisma } from "@/lib/prisma";
-import { VideoResponse } from "@/types/video";
+import { VideoUploadResponse } from "@/types/video";
 
-export const GET = withLoggerAndErrorHandler(async (request: NextRequest) => {
-  const videos = await prisma.video.findMany({
-    orderBy: { createdAt: "desc" },
+export const POST = withLoggerAndErrorHandler(async (request: NextRequest) => {
+  const { userId } = await auth();
+
+  if (!userId) {
+    return errorResponse("Unauthorized", 401);
+  }
+
+  const formData = await request.formData();
+  const file = formData.get("video") as File | null;
+  const title = formData.get("title") as string;
+  const description = formData.get("description") as string;
+  const originalSize = formData.get("originalSize") as string;
+
+  if (!file) {
+    return errorResponse("No file provided", 400);
+  }
+
+  if (!title || !description || !originalSize) {
+    return errorResponse("Missing required fields", 400);
+  }
+
+  const bytes = await file.arrayBuffer();
+  const buffer = Buffer.from(bytes);
+
+  const uploadResult = await new Promise<UploadApiResponse>(
+    (resolve, reject) => {
+      const uploadStream = cloudinary.uploader.upload_stream(
+        {
+          folder: "cloudinary-saas-video-uploads",
+          resource_type: "video",
+          transformation: [{ quality: "auto", fetch_format: "mp4" }],
+        },
+        (error, result) => {
+          if (error) reject(error);
+          resolve(result as UploadApiResponse);
+        }
+      );
+
+      uploadStream.end(buffer);
+    }
+  );
+
+  const video = await prisma.video.create({
+    data: {
+      title,
+      description,
+      publicId: uploadResult.public_id,
+      originalSize,
+      compressedSize: uploadResult.bytes.toString(),
+      duration: uploadResult.duration ?? 0,
+    },
   });
 
-  return successResponse<VideoResponse["data"]>(
-    "Successfully fetched videos",
-    videos
+  return successResponse<VideoUploadResponse["data"]>(
+    "Video uploaded successfully",
+    video,
+    201
   );
 });
