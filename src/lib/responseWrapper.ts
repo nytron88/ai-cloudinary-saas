@@ -1,8 +1,8 @@
 import { NextResponse } from "next/server";
 
 export function successResponse<T = any>(
-  data?: T,
   message = "Request successful",
+  data?: T,
   status = 200
 ) {
   return NextResponse.json(

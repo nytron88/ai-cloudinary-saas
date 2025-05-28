@@ -10,7 +10,7 @@ export const GET = withLoggerAndErrorHandler(async (request: NextRequest) => {
   });
 
   return successResponse<VideoResponse["data"]>(
-    videos,
-    "Successfully fetched videos"
+    "Successfully fetched videos",
+    videos
   );
 });
