@@ -26,7 +26,7 @@ export default function SocialSharePage() {
                 },
             })
 
-            setPublicId(data.data.public_id)
+            setPublicId(data.data.publicId)
             toast.success("Image uploaded successfully")
         } catch (error) {
             if (axios.isAxiosError(error)) {

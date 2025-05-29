@@ -41,6 +41,6 @@ export const POST = withLoggerAndErrorHandler(async (request: NextRequest) => {
   );
 
   return successResponse<ImageResponse["data"]>("Image uploaded successfully", {
-    public_id: uploadResult.public_id,
+    publicId: uploadResult.public_id,
   });
 });
