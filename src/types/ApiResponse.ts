@@ -1,6 +1,6 @@
-export interface APIResponse {
+export interface APIResponse<T = unknown, E = unknown> {
   success: boolean;
   message: string;
-  data?: any;
-  errors?: object;
+  data?: T;
+  errors?: E;
 }

@@ -1,31 +1,36 @@
 import { NextResponse } from "next/server";
+import type { APIResponse } from "@/types/APIResponse";
 
-export function successResponse<T = any>(
+export function successResponse<T>(
   message = "Request successful",
   data?: T,
   status = 200
 ) {
-  return NextResponse.json(
-    {
-      success: true,
-      message,
-      data,
-    },
-    { status }
-  );
+  const responseBody: APIResponse<T> = {
+    success: true,
+    message,
+    ...(data !== undefined && { data }),
+  };
+
+  return NextResponse.json(responseBody, { status });
 }
 
-export function errorResponse(
+export function errorResponse<E = unknown>(
   message = "Something went wrong",
   status = 500,
-  errors?: any
+  errors?: E
 ) {
-  return NextResponse.json(
-    {
-      success: false,
-      message,
-      ...(errors && { errors }),
-    },
-    { status }
-  );
+  const responseBody: APIResponse<null, E> =
+    typeof errors === "object" && errors !== null
+      ? {
+          success: false,
+          message,
+          errors,
+        }
+      : {
+          success: false,
+          message,
+        };
+
+  return NextResponse.json(responseBody, { status });
 }
