@@ -39,7 +39,7 @@ export default function VideoUploadPage() {
             formData.append("description", description)
             formData.append("originalSize", selectedFile.size.toString())
 
-            const { data } = await axios.post("/api/video", formData, {
+            await axios.post("/api/video", formData, {
                 headers: {
                     "Content-Type": "multipart/form-data",
                 },

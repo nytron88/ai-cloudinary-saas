@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import type { APIResponse } from "@/types/APIResponse";
+import { APIResponse } from "@/types/APIResponse";
 
 export function successResponse<T>(
   message = "Request successful",

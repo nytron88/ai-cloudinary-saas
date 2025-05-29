@@ -18,7 +18,7 @@ export default function GlobalNotFound() {
                             404 - Page Not Found
                         </h1>
                         <p className="text-gray-300 text-lg">
-                            The page you're looking for doesn't exist or has been moved.
+                            The page you&#39;re looking for doesn&#39;t exist or has been moved.
                         </p>
                     </div>
 
